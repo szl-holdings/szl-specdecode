@@ -1,0 +1,26 @@
+[project]
+name = "szl-specdecode"
+version = "0.1.0"
+description = "Original SZL draft-then-verify speculative decoding silhouette with SHA3 acceptance receipts. Not a rehost of Medusa/EAGLE/vLLM."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+authors = [
+  { name = "Stephen P. Lutar Jr. / SZL Holdings" },
+]
+urls = { Homepage = "https://a-11-oy.com" }
+dependencies = []
+classifiers = ["Private :: Do Not Upload"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
