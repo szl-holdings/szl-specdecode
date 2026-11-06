@@ -56,3 +56,9 @@ print(receipt.status, receipt.accepted_prefix_len, receipt.receipt_digest[:16])
 - **Is not:** a draft model, a target model, a CUDA kernel, a drop-in vLLM replacement, or a fabricated throughput number.
 
 Wire real draft/target models at the call site; keep the receipt.
+
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.
+
+## License
+
+Apache-2.0 — see [LICENSE](LICENSE).
