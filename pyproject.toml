@@ -10,7 +10,6 @@ authors = [
 ]
 urls = { Homepage = "https://a-11-oy.com" }
 dependencies = []
-classifiers = ["Private :: Do Not Upload"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
