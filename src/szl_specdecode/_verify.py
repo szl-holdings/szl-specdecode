@@ -19,7 +19,7 @@ from hashlib import sha3_256
 from typing import Iterable, List, Optional, Sequence, Tuple
 import json
 
-DOMAIN = b"szl.specdecode.draft-verify.v1"
+DOMAIN = b"szl.specdecode.draft-verify.v2"
 
 
 def _canon_ints(xs: Sequence[int]) -> bytes:
@@ -48,6 +48,7 @@ class DraftVerifyReceipt:
     bonus_token: Optional[int]
     receipt_digest: str
     status: str  # ACCEPTED_PARTIAL | ACCEPTED_FULL | REJECTED_ALL
+    emit_bonus: bool = True  # Explicit caller policy, included in v2 digest.
 
     def to_dict(self) -> dict:
         return {
@@ -58,6 +59,7 @@ class DraftVerifyReceipt:
             "bonus_token": self.bonus_token,
             "receipt_digest": self.receipt_digest,
             "status": self.status,
+            "emit_bonus": self.emit_bonus,
             "domain": DOMAIN.decode("ascii"),
             "energy": "UNAVAILABLE",
             "speedup_claim": None,
@@ -148,7 +150,9 @@ def verify_draft(
         b"receipt",
         prompt_digest.encode("ascii"),
         _canon_ints(draft),
-        _canon_ints(target[: max(len(draft), (accepted + 1))]),
+        # Bind every caller-declared target token, including unused suffixes.
+        _canon_ints(target),
+        b"emit_bonus=1" if emit_bonus else b"emit_bonus=0",
         str(accepted).encode("ascii"),
         b"" if bonus is None else str(bonus).encode("ascii"),
         status.encode("ascii"),
@@ -162,6 +166,7 @@ def verify_draft(
         bonus_token=bonus,
         receipt_digest=receipt_digest,
         status=status,
+        emit_bonus=emit_bonus,
     )
 
 

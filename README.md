@@ -50,6 +50,23 @@ receipt = verify_draft(
 print(receipt.status, receipt.accepted_prefix_len, receipt.receipt_digest[:16])
 ```
 
+## Receipt format safety (source-only v2 candidate)
+
+The v1 receipt hash omitted unused trailing caller-declared target tokens and
+did not bind whether the caller requested bonus emission. Distinct disclosed
+receipts could therefore share a digest. This candidate changes the domain to
+`szl.specdecode.draft-verify.v2`, hashes the **entire declared target-token
+sequence**, and binds the `emit_bonus` policy. v1 and v2 digests are deliberately
+**not interchangeable**; existing v1 chains must remain labeled v1, and any
+migration requires separate source-owner review and consumer compatibility
+tests. This patch is not a package release or runtime promotion.
+
+A SHA3 receipt is *integrity of caller-declared inputs*, not authentication of
+the target model, its sampler or its runtime. The equality-based CPU reference
+does not implement the probabilistic accept/correct rule needed for general
+distribution-preserving sampled speculative decoding; no sampled-mode speed,
+distribution or quality claim is established here.
+
 ## What this is / is not
 
 - **Is:** lossless accept-prefix rule + append-only `AcceptanceLedger` + digest-bound `DraftVerifyReceipt`.
