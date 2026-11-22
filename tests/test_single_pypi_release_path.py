@@ -25,8 +25,10 @@ def _publishing_workflows(directory=WORKFLOWS):
     found = []
     paths = list(directory.glob("*.yml")) + list(directory.glob("*.yaml"))
     for path in sorted(paths):
-        if PUBLISH_INDICATOR.search(path.read_text(encoding="utf-8")):
-            found.append(path.name)
+        # Count occurrences, not filenames: two publish actions inside one
+        # workflow are still two independent release writers.
+        matches = list(PUBLISH_INDICATOR.finditer(path.read_text(encoding="utf-8")))
+        found.extend([path.name] * len(matches))
     return found
 
 
@@ -88,6 +90,18 @@ def test_extra_release_writer_fails_without_provider_call(tmp_path, alt):
         "  bypass:\n    steps:\n      - " + alt + "\n",
         encoding="utf-8",
     )
+    with pytest.raises(AssertionError, match="ALTERNATE_PYPI_PUBLISHER"):
+        _require_single_publisher(tmp_path)
+
+
+def test_second_publish_action_inside_canonical_workflow_is_rejected(tmp_path):
+    body = CANONICAL.read_text(encoding="utf-8")
+    publisher = next(
+        line for line in body.splitlines()
+        if "uses: pypa/gh-action-pypi-publish@" in line
+    )
+    mutated = body.replace(publisher, publisher + "\n" + publisher, 1)
+    (tmp_path / CANONICAL.name).write_text(mutated, encoding="utf-8")
     with pytest.raises(AssertionError, match="ALTERNATE_PYPI_PUBLISHER"):
         _require_single_publisher(tmp_path)
 
