@@ -111,6 +111,9 @@ def verify_draft(
     token after the accepted prefix). This is a CPU reference for the
     lossless accept rule — callers supply both sequences from their models.
     """
+    if type(emit_bonus) is not bool:
+        raise TypeError("emit_bonus must be bool")
+
     prompt = _require_int_tokens(prompt_token_ids, name="prompt_token_ids")
     draft = _require_int_tokens(draft_token_ids, name="draft_token_ids")
     target = _require_int_tokens(target_token_ids, name="target_token_ids")

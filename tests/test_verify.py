@@ -69,3 +69,40 @@ def test_ledger_chain_stable():
     a = led.chain_digest()
     b = led.chain_digest()
     assert a == b
+
+
+def _assert_bad_bonus_policy(value):
+    try:
+        verify_draft([1], [5, 6], [5, 6, 7], emit_bonus=value)
+    except TypeError as error:
+        assert str(error) == 'emit_bonus must be bool'
+    else:
+        raise AssertionError('non-boolean emit_bonus accepted')
+
+
+def test_v2_policy_rejects_integer_one():
+    _assert_bad_bonus_policy(1)
+
+
+def test_v2_policy_rejects_integer_zero():
+    _assert_bad_bonus_policy(0)
+
+
+def test_v2_policy_rejects_truthy_string():
+    _assert_bad_bonus_policy('yes')
+
+
+def test_v2_policy_rejects_empty_list():
+    _assert_bad_bonus_policy([])
+
+
+def test_v2_policy_rejects_none():
+    _assert_bad_bonus_policy(None)
+
+
+def test_v2_policy_preserves_exact_boolean_controls():
+    on = verify_draft([1], [5, 6], [5, 6, 7], emit_bonus=True)
+    off = verify_draft([1], [5, 6], [5, 6, 7], emit_bonus=False)
+    assert on.to_dict()['emit_bonus'] is True
+    assert off.to_dict()['emit_bonus'] is False
+    assert on.receipt_digest != off.receipt_digest
