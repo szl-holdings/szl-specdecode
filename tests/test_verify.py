@@ -24,6 +24,37 @@ def test_rejects_non_int_tokens():
         pass
 
 
+def test_v2_digest_binds_unused_target_suffix():
+    # The v1 digest covered only the first len(draft) target tokens on
+    # early rejection, although to_dict exposed the entire target sequence.
+    left = verify_draft([1], [5, 6], [5, 9, 10])
+    right = verify_draft([1], [5, 6], [5, 9, 11])
+    assert left.status == right.status == "ACCEPTED_PARTIAL"
+    assert left.bonus_token == right.bonus_token == 9
+    assert left.accepted_prefix_len == right.accepted_prefix_len == 1
+    assert left.receipt_digest != right.receipt_digest
+
+
+def test_v2_digest_binds_bonus_policy_even_with_no_bonus_token():
+    # Both v1 receipts had no bonus, identical visible status and digest,
+    # despite different emit_bonus caller policy.
+    target = [5, 6]
+    enabled = verify_draft([1], [5, 6], target, emit_bonus=True)
+    disabled = verify_draft([1], [5, 6], target, emit_bonus=False)
+    assert enabled.bonus_token is None and disabled.bonus_token is None
+    assert enabled.accepted_prefix_len == disabled.accepted_prefix_len == 2
+    assert enabled.receipt_digest != disabled.receipt_digest
+    assert enabled.to_dict()["emit_bonus"] is True
+    assert disabled.to_dict()["emit_bonus"] is False
+
+
+def test_v2_deterministic_and_version_label():
+    x = verify_draft([7], [3, 4], [3, 9, 8], emit_bonus=True)
+    y = verify_draft([7], [3, 4], [3, 9, 8], emit_bonus=True)
+    assert x.receipt_digest == y.receipt_digest
+    assert x.to_dict()["domain"] == "szl.specdecode.draft-verify.v2"
+
+
 def test_selfcheck():
     out = selfcheck()
     assert out["ok"] is True
@@ -38,3 +69,40 @@ def test_ledger_chain_stable():
     a = led.chain_digest()
     b = led.chain_digest()
     assert a == b
+
+
+def _assert_bad_bonus_policy(value):
+    try:
+        verify_draft([1], [5, 6], [5, 6, 7], emit_bonus=value)
+    except TypeError as error:
+        assert str(error) == 'emit_bonus must be bool'
+    else:
+        raise AssertionError('non-boolean emit_bonus accepted')
+
+
+def test_v2_policy_rejects_integer_one():
+    _assert_bad_bonus_policy(1)
+
+
+def test_v2_policy_rejects_integer_zero():
+    _assert_bad_bonus_policy(0)
+
+
+def test_v2_policy_rejects_truthy_string():
+    _assert_bad_bonus_policy('yes')
+
+
+def test_v2_policy_rejects_empty_list():
+    _assert_bad_bonus_policy([])
+
+
+def test_v2_policy_rejects_none():
+    _assert_bad_bonus_policy(None)
+
+
+def test_v2_policy_preserves_exact_boolean_controls():
+    on = verify_draft([1], [5, 6], [5, 6, 7], emit_bonus=True)
+    off = verify_draft([1], [5, 6], [5, 6, 7], emit_bonus=False)
+    assert on.to_dict()['emit_bonus'] is True
+    assert off.to_dict()['emit_bonus'] is False
+    assert on.receipt_digest != off.receipt_digest
